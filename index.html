@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cyber">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="PharmaDrug — Offline Pharmacology Drug Information Database for pharmacy students">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PharmaDrug">
+  <meta name="application-name" content="PharmaDrug">
+  <meta name="msapplication-TileColor" content="#0d9488">
+  <title>PharmaDrug — Drug Pharmacology Database</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <a href="#" class="logo" id="logoHome" aria-label="PharmaDrug Home">
+      <img class="logo-img" src="assets/icons/logo.png" alt="PharmaDrug logo" width="48" height="48">
+      <div class="logo-text">
+        <h1>PharmaDrug</h1>
+        <span>Pharmacology Drug Information Database</span>
+      </div>
+    </a>
+    <div class="header-search">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input type="search" id="headerSearch" placeholder="Search drug, brand, or class..." aria-label="Search drugs" autocomplete="off">
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-icon" id="btnInstallHeader" title="Install app" aria-label="Install app">⬇️</button>
+      <button type="button" class="btn-icon" id="themeToggle" title="Themes" aria-label="Open theme picker">🎨</button>
+      <div class="theme-picker" id="themePicker" role="menu" aria-label="Color themes">
+        <div class="theme-picker-title">Preset themes</div>
+        <div class="theme-grid" id="themeGrid"></div>
+        <div class="theme-picker-title" style="margin-top:0.75rem">Custom theme</div>
+        <div class="theme-custom-panel">
+          <label class="theme-custom-row"><span>Primary</span><input type="color" id="customPrimary" value="#00f5d4"></label>
+          <label class="theme-custom-row"><span>Accent</span><input type="color" id="customAccent" value="#7b61ff"></label>
+          <label class="theme-custom-row"><span>Background</span><input type="color" id="customBg" value="#070b16"></label>
+          <label class="theme-custom-row"><span>Card</span><input type="color" id="customCard" value="#0f172a"></label>
+          <label class="theme-custom-row"><span>Text</span><input type="color" id="customText" value="#e8f7ff"></label>
+          <label class="theme-custom-row">
+            <span>Mode</span>
+            <select id="customMode">
+              <option value="dark">Dark futuristic</option>
+              <option value="light">Light glass</option>
+            </select>
+          </label>
+          <div class="theme-custom-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="btnApplyCustomTheme">Apply custom</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnSaveCustomTheme">Save as mine</button>
+          </div>
+          <div id="savedCustomThemes" class="saved-custom-themes"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="nav" role="navigation" aria-label="Main">
+    <button type="button" class="nav-btn active" data-view="home">Home</button>
+    <button type="button" class="nav-btn" data-view="favorites">Favorites</button>
+    <button type="button" class="nav-btn" data-view="classification">Classification</button>
+    <button type="button" class="nav-btn" data-view="drugclasses">Drug Classes</button>
+    <button type="button" class="nav-btn" data-view="compare">Compare</button>
+    <button type="button" class="nav-btn" data-view="interactions">Interactions</button>
+    <button type="button" class="nav-btn" data-view="glossary">Glossary</button>
+    <button type="button" class="nav-btn" data-view="study">Study Mode</button>
+    <button type="button" class="nav-btn" data-view="add">Add Drug</button>
+    <button type="button" class="nav-btn" data-view="addclass">Add Classification</button>
+    <button type="button" class="nav-btn" data-view="backup">Backup</button>
+    <button type="button" class="nav-btn" data-view="about">About</button>
+  </nav>
+
+  <main class="main">
+    <!-- HOME -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <h2>Search Any Drug</h2>
+        <p>Explore mechanism, pharmacokinetics, indications, adverse effects, interactions and more.</p>
+        <div class="hero-search">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input type="search" id="heroSearch" placeholder="Search drug name, brand name, or drug class..." aria-label="Search drugs" autocomplete="off">
+          <button type="button" id="heroSearchBtn" class="btn btn-primary" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);border-radius:50px;padding:0.5rem 1.2rem;">Search</button>
+        </div>
+      </div>
+
+      <div class="install-banner" id="installBanner">
+        <div class="install-banner-content">
+          <div class="install-banner-icon">⬇️</div>
+          <div class="install-banner-text">
+            <strong>Install PharmaDrug on your PC</strong>
+            <span id="installBannerHint">Download Windows Setup → run Install-PharmaDrug.bat → open from Start Menu next time.</span>
+          </div>
+        </div>
+        <div class="install-banner-actions">
+          <button type="button" class="btn btn-primary" id="btnInstallOneClick">Download PC Setup</button>
+          <a class="btn btn-primary btn-sm" id="btnDownloadWindowsSetup" href="downloads/PharmaDrug-Windows-Setup.zip" download="PharmaDrug-Windows-Setup.zip">⬇ Windows Setup</a>
+          <a class="btn btn-secondary btn-sm" id="btnDownloadFullSite" href="downloads/PharmaDrug-Full-Website.zip" download="PharmaDrug-Full-Website.zip" title="Website files only">Website ZIP</a>
+          <a class="btn btn-secondary btn-sm" id="btnDownloadAndroidPack" href="downloads/PharmaDrug-Android-Install.zip" download>Android Pack</a>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnInstallDismiss" title="Dismiss">✕</button>
+        </div>
+      </div>
+
+      <div class="install-modal hidden" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+        <div class="install-modal-card">
+          <button type="button" class="install-modal-close" id="installModalClose" aria-label="Close">×</button>
+          <h2 id="installModalTitle">Install PharmaDrug</h2>
+          <div id="installModalBody"></div>
+        </div>
+      </div>
+
+      <h3 class="section-title">Popular Drugs</h3>
+      <div class="popular-grid" id="popularGrid"></div>
+
+      <h3 class="section-title">Recently Viewed</h3>
+      <div id="recentList" class="results-grid"></div>
+    </section>
+
+    <!-- SEARCH RESULTS -->
+    <section id="view-search" class="view hidden">
+      <h2 id="searchTitle">Search Results</h2>
+      <div id="searchResults" class="mt-2"></div>
+    </section>
+
+    <!-- DRUG PROFILE -->
+    <section id="view-profile" class="view hidden">
+      <div id="drugProfile"></div>
+    </section>
+
+    <!-- FAVORITES -->
+    <section id="view-favorites" class="view hidden">
+      <h2>Favorites</h2>
+      <div id="favoritesList" class="mt-2"></div>
+    </section>
+
+    <!-- ADD / EDIT -->
+    <section id="view-add" class="view hidden">
+      <h2 id="formTitle">Add New Drug</h2>
+      <p class="text-muted mb-2">Add educational drug information. All data is stored locally in your browser.</p>
+
+      <div class="card card-body ai-helper" id="aiHelperPanel">
+        <h3 class="ai-helper-title">⚡ Quick fill with ChatGPT</h3>
+        <p class="text-muted" style="margin-top:0">Type the drug name → generate a prompt → paste ChatGPT’s reply → auto-fill the form in one click.</p>
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label for="aiDrugName">Drug name</label>
+            <input type="text" id="aiDrugName" placeholder="e.g. Empagliflozin">
+          </div>
+        </div>
+        <div class="ai-helper-actions">
+          <button type="button" class="btn btn-primary" id="btnGeneratePrompt">1. Generate ChatGPT Prompt</button>
+          <button type="button" class="btn btn-secondary" id="btnCopyPrompt">Copy Prompt</button>
+        </div>
+        <div class="form-group mt-2">
+          <label for="aiPromptBox">Prompt (copy this into ChatGPT)</label>
+          <textarea id="aiPromptBox" rows="6" readonly placeholder="Generated prompt will appear here…"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="aiResponseBox">Paste ChatGPT response here (JSON)</label>
+          <textarea id="aiResponseBox" rows="8" placeholder="Paste the full ChatGPT reply here…"></textarea>
+        </div>
+        <div class="ai-helper-actions">
+          <button type="button" class="btn btn-primary" id="btnAutoFillForm">2. Auto-fill all boxes</button>
+          <button type="button" class="btn btn-ghost" id="btnClearAi">Clear</button>
+        </div>
+        <p class="text-muted" style="font-size:0.85rem;margin-bottom:0">Tip: In ChatGPT, ask it to reply with <strong>JSON only</strong>. Then click Auto-fill. Review the form and press Save Drug.</p>
+      </div>
+
+      <form id="addForm" class="card card-body">
+        <input type="hidden" id="editId" value="">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="genericName">Generic Name *</label>
+            <input type="text" id="genericName" name="genericName" required>
+          </div>
+          <div class="form-group">
+            <label for="brandNames">Brand Names (comma-separated)</label>
+            <input type="text" id="brandNames" name="brandNames">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="drugClass">Drug Class</label>
+            <input type="text" id="drugClass" name="drugClass">
+          </div>
+          <div class="form-group">
+            <label for="therapeuticClass">Therapeutic Class</label>
+            <input type="text" id="therapeuticClass" name="therapeuticClass">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="mechanismOfAction">Mechanism of Action</label>
+          <textarea id="mechanismOfAction" name="mechanismOfAction"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="mechanismFlow">Mechanism Flow (separate steps with | )</label>
+          <input type="text" id="mechanismFlow" name="mechanismFlow" placeholder="Drug | Target | Mechanism | Effect | Therapeutic effect">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="absorption">Absorption</label>
+            <textarea id="absorption" name="absorption" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="distribution">Distribution</label>
+            <textarea id="distribution" name="distribution" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="metabolism">Metabolism</label>
+            <textarea id="metabolism" name="metabolism" rows="2"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="excretion">Excretion</label>
+            <textarea id="excretion" name="excretion" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="indications">Indications (one per line)</label>
+          <textarea id="indications" name="indications"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="routes">Routes (comma-separated)</label>
+            <input type="text" id="routes" name="routes">
+          </div>
+          <div class="form-group">
+            <label for="adultDose">Adult Dose</label>
+            <input type="text" id="adultDose" name="adultDose">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pediatricDose">Pediatric Dose</label>
+            <input type="text" id="pediatricDose" name="pediatricDose">
+          </div>
+          <div class="form-group">
+            <label for="doseNotes">Dose Notes</label>
+            <input type="text" id="doseNotes" name="doseNotes">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="commonAE">Common Adverse Effects (one per line)</label>
+            <textarea id="commonAE" name="commonAE"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="seriousAE">Serious Adverse Effects (one per line)</label>
+            <textarea id="seriousAE" name="seriousAE"></textarea>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contraindications">Contraindications (one per line)</label>
+          <textarea id="contraindications" name="contraindications"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="monitoring">Monitoring (one per line)</label>
+          <textarea id="monitoring" name="monitoring"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="counseling">Patient Counseling (one per line)</label>
+          <textarea id="counseling" name="counseling"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="storage">Storage</label>
+          <input type="text" id="storage" name="storage">
+        </div>
+        <button type="submit" class="btn btn-primary">Save Drug</button>
+      </form>
+    </section>
+
+    <!-- CLASSIFICATION — manage drug classes -->
+    <section id="view-classification" class="view hidden">
+      <div class="class-page-header">
+        <div>
+          <h2>Classification</h2>
+          <p class="text-muted mb-2">Browse and manage drug classes. Add a new pharmacological or therapeutic class here.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnAddClass">+ Add Drug Class</button>
+      </div>
+      <div class="class-search-bar">
+        <input type="search" id="classificationSearch" placeholder="Search classifications..." aria-label="Search classifications" autocomplete="off">
+      </div>
+      <div id="classificationTree" class="class-tree"></div>
+
+      <div class="install-modal hidden" id="addClassModal" role="dialog" aria-modal="true" aria-labelledby="addClassModalTitle">
+        <div class="install-modal-card">
+          <button type="button" class="install-modal-close" id="addClassModalClose" aria-label="Close">×</button>
+          <h2 id="addClassModalTitle">Add Drug Class</h2>
+          <form id="addClassForm" class="add-class-form">
+            <div class="form-group">
+              <label for="newClassName">Class name *</label>
+              <input type="text" id="newClassName" required placeholder="e.g. SGLT2 Inhibitor">
+            </div>
+            <div class="form-group">
+              <label for="newClassType">Class type *</label>
+              <select id="newClassType" required>
+                <option value="drugClass">Drug Class (mechanism / pharmacology)</option>
+                <option value="therapeuticClass">Therapeutic Class</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="newClassDesc">Description (optional)</label>
+              <textarea id="newClassDesc" rows="2" placeholder="Short description of this class"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Save Class</button>
+              <button type="button" class="btn btn-secondary" id="addClassCancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRUG CLASSES — drugs within each class -->
+    <section id="view-drugclasses" class="view hidden">
+      <div class="class-page-header">
+        <div>
+          <h2>Drug Classes</h2>
+          <p class="text-muted mb-2">Browse drugs by class. Expand a class to see members or add a specific drug into that class.</p>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnAddDrugFromClasses">+ Add Drug</button>
+      </div>
+      <div class="class-search-bar">
+        <input type="search" id="drugClassSearch" placeholder="Search drug classes or drug names..." aria-label="Search drug classes" autocomplete="off">
+      </div>
+      <div id="drugClassTree" class="class-tree"></div>
+    </section>
+
+    <!-- COMPARE -->
+    <section id="view-compare" class="view hidden">
+      <h2>Compare Drugs</h2>
+      <div id="compareSelect"></div>
+      <div id="compareTable" class="mt-2"></div>
+    </section>
+
+    <!-- INTERACTIONS -->
+    <section id="view-interactions" class="view hidden">
+      <h2>Drug Interactions</h2>
+      <p class="text-muted mb-2">Educational interaction checker and reference. Summarized pharmacology teaching points — always verify with current clinical sources.</p>
+      <div class="card card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ixSearchA">Drug / class A</label>
+            <input type="search" id="ixSearchA" placeholder="e.g. Warfarin, Simvastatin, ACE inhibitor" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="ixSearchB">Drug / class B (optional)</label>
+            <input type="search" id="ixSearchB" placeholder="e.g. Amiodarone, NSAID" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ixSeverity">Significance</label>
+            <select id="ixSeverity">
+              <option value="">All</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MODERATE">MODERATE</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ixCategory">Category</label>
+            <select id="ixCategory">
+              <option value="">All categories</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-1 flex-wrap">
+          <button type="button" class="btn btn-primary" id="btnIxSearch">Search interactions</button>
+          <button type="button" class="btn btn-secondary" id="btnIxBrowse">Browse all</button>
+        </div>
+      </div>
+      <div id="ixResults" class="mt-2"></div>
+    </section>
+
+    <!-- STUDY -->
+    
+    <section id="view-glossary" class="view hidden">
+      <div class="class-page-header">
+        <h2>Glossary of complicated terms</h2>
+        <p class="text-muted">Student-friendly definitions aligned with concepts taught in <em>Lippincott Illustrated Reviews: Pharmacology</em>. Search a term or browse by topic.</p>
+      </div>
+      <div class="search-wrap">
+        <input type="search" id="glossarySearch" placeholder="Search term or definition (e.g. bioavailability, agonist, CYP)..." aria-label="Search glossary" autocomplete="off">
+      </div>
+      <div id="glossaryList" class="glossary-list"></div>
+      <p class="disclaimer">Educational summaries only. For full explanations, figures, and clinical nuance, use the Lippincott textbook and current clinical references.</p>
+    </section>
+
+<section id="view-study" class="view hidden">
+      <h2>Study Mode</h2>
+      <p class="text-muted mb-2">Quiz, Viva, or Dialogue — built from one drug or multiple selected drugs.</p>
+      <div id="quizSetup"></div>
+      <div id="quizArea"></div>
+    </section>
+
+    <!-- BACKUP -->
+    <section id="view-backup" class="view hidden">
+      <h2>Backup & Restore</h2>
+      <div class="card card-body">
+        <p>Export your user-added drugs, favorites, notes, and settings as a JSON file. You can import it later on this or another device.</p>
+        <div class="mt-2 flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-primary" id="btnExport">Export Database</button>
+          <label class="btn btn-secondary" style="cursor:pointer;">
+            Import Database
+            <input type="file" id="importFile" accept=".json,application/json" hidden>
+          </label>
+        </div>
+        <div class="mt-2">
+          <label style="display:flex;align-items:center;gap:0.5rem;">
+            <input type="checkbox" id="allowEditBuiltIn">
+            Allow editing of built-in drugs (advanced)
+          </label>
+        </div>
+      </div>
+      <div class="card card-body mt-2">
+        <h3 style="margin-top:0">Download full website</h3>
+        <p class="text-muted">Get the complete PharmaDrug site (all features, offline-ready) as a single ZIP. Unzip and open <code>index.html</code>, or use the start scripts.</p>
+        <a class="btn btn-primary" id="btnDownloadFullSiteBackup" href="downloads/PharmaDrug-Full-Website.zip" download="PharmaDrug-Full-Website.zip">⬇ Download Full Website (ZIP)</a>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="view-about" class="view hidden">
+      <h2>About PharmaDrug</h2>
+      <div class="card card-body">
+        <p><strong>PharmaDrug</strong> is an offline-first pharmacology drug information database designed for pharmacy and medical students.</p>
+        <p class="mt-1">All data is stored and processed entirely in your browser. No account, no server, no internet required after the first load.</p>
+        <p class="mt-2">
+          <a class="btn btn-primary" href="downloads/PharmaDrug-Full-Website.zip" download="PharmaDrug-Full-Website.zip">⬇ Download Full Website (ZIP)</a>
+        </p>
+        <div class="disclaimer mt-2">
+          <strong>Educational use only.</strong> This website is intended for pharmacy/medical education and drug-information study. It is not a substitute for a qualified healthcare professional, official prescribing information, or a pharmacist/physician's advice. Drug doses and clinical recommendations may vary by patient, indication, formulation, country, and current guidelines. Always verify clinical information using authoritative references before making treatment decisions.
+        </div>
+        <p class="mt-2 text-muted">Built with HTML, CSS, and vanilla JavaScript. Data structured for easy expansion.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>PharmaDrug · Educational use only · Not for clinical decision-making</p>
+  </footer>
+
+  
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="data/drugs.js"></script>
+  <script src="data/drugs-extra.js"></script>
+  <script src="data/drugs-classes.js"></script>
+  <script src="data/interactions.js"></script>
+  <script src="data/glossary.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('logoHome')?.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector('.nav-btn[data-view="home"]')?.click();
+    });
+  </script>
+</body>
+</html>
