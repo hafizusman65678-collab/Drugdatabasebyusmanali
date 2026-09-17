@@ -69,6 +69,7 @@
     <button type="button" class="nav-btn" data-view="drugclasses">Drug Classes</button>
     <button type="button" class="nav-btn" data-view="compare">Compare</button>
     <button type="button" class="nav-btn" data-view="interactions">Interactions</button>
+    <button type="button" class="nav-btn" data-view="contraindications">Contraindications</button>
     <button type="button" class="nav-btn" data-view="glossary">Glossary</button>
     <button type="button" class="nav-btn" data-view="study">Study Mode</button>
     <button type="button" class="nav-btn" data-view="add">Add Drug</button>
@@ -339,6 +340,23 @@
       <h2>Compare Drugs</h2>
       <div id="compareSelect"></div>
       <div id="compareTable" class="mt-2"></div>
+    </section>
+
+    <!-- CONTRAINDICATIONS -->
+    <section id="view-contraindications" class="view hidden">
+      <h2>Contraindications</h2>
+      <p class="text-muted mb-2">Browse and search absolute / relative contraindications for each drug (built-in and drugs you added). Educational summaries only — always verify with current prescribing information.</p>
+      <div class="card card-body">
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label for="contraSearch">Search drug, class, or contraindication text</label>
+          <input type="search" id="contraSearch" placeholder="e.g. pregnancy, renal failure, metformin, NSAID..." autocomplete="off">
+        </div>
+        <div class="flex gap-1 flex-wrap" style="margin-bottom:0.5rem">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnContraOnlyWithData">Only drugs with listed contraindications</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnContraShowAll">Show all drugs</button>
+        </div>
+      </div>
+      <div id="contraResults" class="mt-2"></div>
     </section>
 
     <!-- INTERACTIONS -->

@@ -236,6 +236,17 @@
     drugs = Array.from(map.values());
   }
 
+  /** All drugs for pickers: user-added first, then A–Z. Always refreshes merge. */
+  function getAllDrugsForPicker() {
+    mergeDrugs();
+    return drugs.slice().sort((a, b) => {
+      const ua = a._source === 'user' ? 0 : 1;
+      const ub = b._source === 'user' ? 0 : 1;
+      if (ua !== ub) return ua - ub;
+      return (a.genericName || '').localeCompare(b.genericName || '');
+    });
+  }
+
   // ========== THEME ==========
   const THEME_OPTIONS = [
     { id: 'cyber', label: 'Cyber' },
@@ -2358,20 +2369,24 @@ Rules:
       const list = document.getElementById('quizDrugPickList');
       if (!list) return;
       const q = (filter || '').toLowerCase().trim();
-      const items = drugs
-        .filter(d => {
-          if (!d.genericName) return false;
-          if (!q) return true;
+      // Always refresh so newly added drugs appear
+      let items = getAllDrugsForPicker().filter(d => d.genericName);
+      if (q) {
+        items = items.filter(d => {
           const blob = [d.genericName, ...(d.brandNames || []), d.drugClass || '', d.therapeuticClass || ''].join(' ').toLowerCase();
           return blob.includes(q);
-        })
-        .sort((a, b) => a.genericName.localeCompare(b.genericName))
-        .slice(0, 80);
+        });
+      } else {
+        // User drugs always visible; then up to 150 others (search finds the rest)
+        const users = items.filter(d => d._source === 'user');
+        const others = items.filter(d => d._source !== 'user').slice(0, 150);
+        items = [...users, ...others];
+      }
 
       list.innerHTML = items.map(d => `
         <label class="quiz-pick-item">
           <input type="checkbox" data-id="${d.id}" ${selected.has(d.id) ? 'checked' : ''}>
-          <span class="quiz-pick-name">${escapeHtml(d.genericName)}</span>
+          <span class="quiz-pick-name">${escapeHtml(d.genericName)}${d._source === 'user' ? ' <em style="opacity:0.8">(yours)</em>' : ''}</span>
           <span class="quiz-pick-class">${escapeHtml(d.drugClass || '')}</span>
         </label>
       `).join('') || '<p class="text-muted">No drugs match.</p>';
@@ -3197,6 +3212,84 @@ Rules:
     return existing;
   }
 
+  function renderContraindications() {
+    showView('contraindications');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'contraindications'));
+    const results = document.getElementById('contraResults');
+    const searchEl = document.getElementById('contraSearch');
+    if (!results) return;
+
+    let onlyWithData = true;
+
+    function paint() {
+      mergeDrugs();
+      const q = (searchEl?.value || '').toLowerCase().trim();
+      let list = getAllDrugsForPicker().filter(d => d && d.genericName);
+      if (onlyWithData) {
+        list = list.filter(d => Array.isArray(d.contraindications) && d.contraindications.length > 0);
+      }
+      if (q) {
+        list = list.filter(d => {
+          const blob = [
+            d.genericName,
+            ...(d.brandNames || []),
+            d.drugClass || '',
+            d.therapeuticClass || '',
+            ...(d.contraindications || [])
+          ].join(' ').toLowerCase();
+          return blob.includes(q);
+        });
+      }
+
+      if (!list.length) {
+        results.innerHTML = `<div class="empty-state"><div class="icon">🚫</div><p>No matching contraindications found.</p><p class="text-muted">Try another search, or add contraindications when you create a drug.</p></div>`;
+        return;
+      }
+
+      results.innerHTML = `
+        <p class="text-muted" style="margin-bottom:0.75rem">${list.length} drug${list.length === 1 ? '' : 's'}</p>
+        <div class="contra-list">
+          ${list.map(d => {
+            const items = (d.contraindications || []).filter(Boolean);
+            return `
+              <div class="card card-body contra-card" style="margin-bottom:0.75rem">
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;justify-content:space-between">
+                  <div>
+                    <h3 style="margin:0;cursor:pointer" class="contra-open" data-id="${escapeHtml(d.id)}">${escapeHtml(d.genericName)}</h3>
+                    <div class="text-muted" style="font-size:0.85rem">
+                      ${escapeHtml(d.drugClass || '')}${d.therapeuticClass ? ' · ' + escapeHtml(d.therapeuticClass) : ''}
+                      ${d._source === 'user' ? ' · <em>Your drug</em>' : ''}
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-secondary btn-sm contra-open" data-id="${escapeHtml(d.id)}">Open profile</button>
+                </div>
+                ${items.length
+                  ? `<ul class="contra-ul" style="margin:0.65rem 0 0;padding-left:1.2rem">${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`
+                  : `<p class="text-muted" style="margin:0.65rem 0 0">No contraindications listed for this entry.</p>`}
+              </div>`;
+          }).join('')}
+        </div>`;
+
+      results.querySelectorAll('.contra-open').forEach(btn => {
+        btn.addEventListener('click', () => openDrug(btn.dataset.id));
+      });
+    }
+
+    paint();
+    searchEl?.removeEventListener('input', searchEl._contraHandler);
+    searchEl._contraHandler = () => paint();
+    searchEl?.addEventListener('input', searchEl._contraHandler);
+
+    document.getElementById('btnContraOnlyWithData')?.addEventListener('click', () => {
+      onlyWithData = true;
+      paint();
+    });
+    document.getElementById('btnContraShowAll')?.addEventListener('click', () => {
+      onlyWithData = false;
+      paint();
+    });
+  }
+
   function renderInteractions(prefill) {
     showView('interactions');
     const catSel = document.getElementById('ixCategory');
@@ -3276,35 +3369,82 @@ Rules:
   // ========== COMPARE ==========
   function renderCompare() {
     showView('compare');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'compare'));
     const selectArea = document.getElementById('compareSelect');
     const tableArea = document.getElementById('compareTable');
     if (!selectArea) return;
 
+    // Refresh so newly added user drugs are included
+    const all = getAllDrugsForPicker();
+
     selectArea.innerHTML = `
-      <p>Select 2–4 drugs to compare:</p>
-      <div class="flex flex-wrap gap-1 mb-2">
-        ${drugs.slice(0, 40).map(d => `
-          <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.9rem;">
-            <input type="checkbox" class="compare-check" value="${d.id}" ${compareList.includes(d.id) ? 'checked' : ''}>
-            ${escapeHtml(d.genericName)}
-          </label>
-        `).join('')}
+      <p>Select 2–4 drugs to compare (includes drugs you added — shown first with a <em>Yours</em> tag):</p>
+      <div class="form-group">
+        <label for="compareSearch">Search drugs</label>
+        <input type="search" id="compareSearch" placeholder="Type name or class..." autocomplete="off">
       </div>
+      <div id="compareCheckList" class="flex flex-wrap gap-1 mb-2" style="max-height:220px;overflow:auto;padding:0.35rem 0"></div>
+      <p class="text-muted" id="comparePickHint" style="font-size:0.85rem"></p>
       <button type="button" class="btn btn-primary btn-sm" id="btnRunCompare">Compare Selected</button>
     `;
 
-    selectArea.querySelectorAll('.compare-check').forEach(cb => {
-      cb.addEventListener('change', () => {
-        compareList = Array.from(selectArea.querySelectorAll('.compare-check:checked')).map(c => c.value).slice(0, 4);
+    function paintCompareList(filter) {
+      const box = document.getElementById('compareCheckList');
+      const hint = document.getElementById('comparePickHint');
+      if (!box) return;
+      const q = (filter || '').toLowerCase().trim();
+      let list = all.filter(d => d && d.genericName);
+      if (q) {
+        list = list.filter(d => {
+          const blob = [d.genericName, ...(d.brandNames || []), d.drugClass || '', d.therapeuticClass || ''].join(' ').toLowerCase();
+          return blob.includes(q);
+        });
+      }
+      // Show all matches when searching; otherwise cap display but always include all user drugs
+      if (!q) {
+        const users = list.filter(d => d._source === 'user');
+        const others = list.filter(d => d._source !== 'user').slice(0, 120);
+        list = [...users, ...others];
+      }
+      box.innerHTML = list.map(d => `
+        <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.9rem;">
+          <input type="checkbox" class="compare-check" value="${escapeHtml(d.id)}" ${compareList.includes(d.id) ? 'checked' : ''}>
+          ${escapeHtml(d.genericName)}
+          ${d._source === 'user' ? '<span class="class-chip" style="font-size:0.7rem">Yours</span>' : ''}
+        </label>
+      `).join('') || '<span class="text-muted">No drugs match.</span>';
+      if (hint) {
+        hint.textContent = q
+          ? list.length + ' match' + (list.length === 1 ? '' : 'es')
+          : 'Showing your drugs + first 120 others. Search to find any drug.';
+      }
+      box.querySelectorAll('.compare-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checked = Array.from(selectArea.querySelectorAll('.compare-check:checked')).map(c => c.value);
+          if (checked.length > 4) {
+            cb.checked = false;
+            showToast('Select at most 4 drugs');
+            return;
+          }
+          compareList = checked;
+        });
       });
-    });
+    }
+
+    paintCompareList('');
+    document.getElementById('compareSearch')?.addEventListener('input', e => paintCompareList(e.target.value));
 
     document.getElementById('btnRunCompare')?.addEventListener('click', () => {
+      mergeDrugs();
       if (compareList.length < 2) {
         showToast('Select at least 2 drugs');
         return;
       }
       const selected = compareList.map(id => drugs.find(d => d.id === id)).filter(Boolean);
+      if (selected.length < 2) {
+        showToast('Selected drugs not found — try again after refreshing list');
+        return;
+      }
       const features = [
         { key: 'genericName', label: 'Generic Name' },
         { key: 'drugClass', label: 'Drug Class' },
@@ -3318,7 +3458,7 @@ Rules:
       tableArea.innerHTML = `
         <div class="table-wrap">
           <table class="compare-table">
-            <thead><tr><th>Feature</th>${selected.map(d => `<th>${escapeHtml(d.genericName)}</th>`).join('')}</tr></thead>
+            <thead><tr><th>Feature</th>${selected.map(d => `<th>${escapeHtml(d.genericName)}${d._source === 'user' ? ' *' : ''}</th>`).join('')}</tr></thead>
             <tbody>
               ${features.map(f => `<tr>
                 <td><strong>${f.label}</strong></td>
@@ -3326,11 +3466,11 @@ Rules:
                   let val = '—';
                   if (f.key === 'genericName') val = d.genericName;
                   else if (f.key === 'drugClass') val = d.drugClass;
-                  else if (f.key === 'mechanism') val = (d.mechanismFlow && d.mechanismFlow.slice(0, 3).join(' → ')) || d.mechanismOfAction?.slice(0, 100);
+                  else if (f.key === 'mechanism') val = (d.mechanismFlow && d.mechanismFlow.slice(0, 3).join(' → ')) || (d.mechanismOfAction || '').slice(0, 100);
                   else if (f.key === 'indications') val = (d.indications || []).slice(0, 3).join('; ');
                   else if (f.key === 'routes') val = (d.dosage && d.dosage.routes || []).join(', ');
                   else if (f.key === 'ae') val = (d.adverseEffects && (d.adverseEffects.serious || d.adverseEffects.common) || []).slice(0, 3).join('; ');
-                  else if (f.key === 'contra') val = (d.contraindications || []).slice(0, 2).join('; ');
+                  else if (f.key === 'contra') val = (d.contraindications || []).slice(0, 4).join('; ');
                   else if (f.key === 'monitor') val = (d.monitoring || []).slice(0, 3).join('; ');
                   return `<td>${escapeHtml(val || '—')}</td>`;
                 }).join('')}
@@ -3748,6 +3888,7 @@ Rules:
         else if (view === 'study') renderQuiz();
         else if (view === 'compare') renderCompare();
         else if (view === 'interactions') renderInteractions();
+        else if (view === 'contraindications') renderContraindications();
         else if (view === 'glossary') {
           showView('glossary');
           renderGlossary(document.getElementById('glossarySearch')?.value || '');

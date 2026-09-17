@@ -1,5 +1,5 @@
 /* PharmaDrug Service Worker — offline-first cache */
-const CACHE_NAME = 'pharmadrug-v8';
+const CACHE_NAME = 'pharmadrug-v9';
 const ASSETS = [
   './',
   './index.html',
